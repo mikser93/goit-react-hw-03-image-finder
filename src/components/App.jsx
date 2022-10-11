@@ -1,75 +1,82 @@
 import { Component } from 'react';
-import { nanoid } from 'nanoid';
-import { InputForm } from './InputForm/InputForm';
-import { ContactsList } from './ContactsList/ContactsList';
-import { Filter } from './Filter/Filter';
-import s from './App.module.css';
+import { Searchbar } from './Searchbar/Searchbar';
+import { ImageGallery } from './ImageGallery/ImageGallery';
+import { Button } from './Button/Button';
+import { Loader } from './Loader/Loader';
+import { Modal } from './Modal/Modal';
+import { requesterAPI } from './services/requesterAPI';
+import noFound from './images/no-found.png';
+import styles from './App.module.css';
 
 class App extends Component {
   state = {
-    contacts: [],
-    filter: '',
+    serachWord: '',
+    page: 1,
+    images: [],
+    largeImage: '',
+    isEndOfGallery: false,
+    isModalOpen: false,
+    isLoading: false,
   };
 
   componentDidMount() {
-    const currentLS = localStorage.getItem('contactsList');
-    if (currentLS) {
-      this.setState({ contacts: JSON.parse(currentLS) });
-    }
-  }
+    this.getPhotos();
+  };
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevState.contacts !== this.state.contacts) {
-      localStorage.setItem('contactsList', JSON.stringify(this.state.contacts));
-    }
-  }
-
-  addContact = (name, number) => {
-    if (
-      this.state.contacts
-        .find(item => item.name === name)
-    ) {
-      alert(`${name} is already in contacts`);
-    } else {
-      const currentContacts = [
-        ...this.state.contacts,
-        { id: nanoid(), name: name, number: number },
-      ];
-      this.setState({ contacts: currentContacts });
+    const { serachWord, page } = this.state;
+    if (prevState.page !== page || prevState.serachWord !== serachWord) {
+          this.getPhotos();
     }
   };
 
-  deleteContact = id => {
-    const currentContacts = [...this.state.contacts].filter(
-      item => item.id !== id
-    );
-    this.setState({ contacts: currentContacts });
+  onSubmit = (event) => {
+    event.preventDefault();
+    this.setState({ serachWord: event.target[1].value, page: 1, images: [], isEndOfGallery: false });
+    event.target.reset();
   };
 
-  filterOperator = event => {
-    this.setState({ filter: event.target.value.toLowerCase() });
+  pageOperator = () => {
+    this.setState(prevState => { return { page: prevState.page + 1 } });
+  };
+
+  getPhotos = async () => {
+    this.setState({ isLoading: true });
+    try {
+      requesterAPI(this.state.serachWord, this.state.page)
+        .then(response => {
+          this.setState(prevState => ({
+            images: [...prevState.images, ...response.hits],
+            isEndOfGallery: prevState.images.length + response.hits.length === response.totalHits
+          }));
+        });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      this.setState({ isLoading: false });
+    };
+  };
+
+  toggleModal = event => {
+    if (event.target === event.currentTarget || event.code ) {
+      const imgPath = event.target.id ? this.state.images[event.target.id].largeImageURL : '';
+      this.setState(prevValue => ({ isModalOpen: !prevValue.isModalOpen, largeImage: imgPath }));
+    };
   };
 
   render() {
-    const currentContacts = this.state.contacts.filter(item =>
-      item.name.toLowerCase().includes(this.state.filter)
-    );
+    const { images, largeImage, isModalOpen, isLoading, isEndOfGallery } = this.state;
     return (
-      <div className={s.container}>
-        <h1>Phonebook</h1>
-        <InputForm addContact={this.addContact} />
-        <h2>Contacts</h2>
-        <Filter
-          filter={this.state.filter}
-          filterOperator={this.filterOperator}
-        />
-        <ContactsList
-          currentContacts={currentContacts}
-          deleteContact={this.deleteContact}
-        />
+      <div className={styles.app}>
+        <Searchbar onSubmit={this.onSubmit} />
+        {images.length > 0 && <ImageGallery images={images} toggleModal={this.toggleModal} />}
+        {!images.length > 0 && <img src={noFound} alt="depiction no found" style={{margin: "auto", maxWidth: "600px"}} />}
+        {images.length > 0 && !isEndOfGallery && <Button pageOperator={this.pageOperator} />}
+        {isModalOpen && <Modal image={largeImage} toggleModal={this.toggleModal} />}
+        {isLoading && <Loader />}
       </div>
     );
-  }
-}
+  };
+};
 
 export default App;
