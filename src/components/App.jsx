@@ -10,7 +10,7 @@ import styles from './App.module.css';
 
 class App extends Component {
   state = {
-    serachWord: '',
+    serchWord: '',
     page: 1,
     images: [],
     largeImage: '',
@@ -24,15 +24,19 @@ class App extends Component {
   };
 
   componentDidUpdate(prevProps, prevState) {
-    const { serachWord, page } = this.state;
-    if (prevState.page !== page || prevState.serachWord !== serachWord) {
-          this.getPhotos();
+    const { serchWord, page } = this.state;
+    if (prevState.page !== page) {
+      this.getPhotos();
     }
+    if (prevState.serchWord !== serchWord) {
+      this.resetData();
+      this.getPhotos();
+}
   };
 
   onSubmit = (event) => {
     event.preventDefault();
-    this.setState({ serachWord: event.target[1].value, page: 1, images: [], isEndOfGallery: false });
+    this.setState({ serchWord: event.target[1].value });
     event.target.reset();
   };
 
@@ -40,10 +44,14 @@ class App extends Component {
     this.setState(prevState => { return { page: prevState.page + 1 } });
   };
 
+  resetData = () => {
+    this.setState({ page: 1, images: [], isEndOfGallery: false });
+  }
+
   getPhotos = async () => {
     this.setState({ isLoading: true });
     try {
-      requesterAPI(this.state.serachWord, this.state.page)
+      requesterAPI(this.state.serchWord, this.state.page)
         .then(response => {
           this.setState(prevState => ({
             images: [...prevState.images, ...response.hits],
