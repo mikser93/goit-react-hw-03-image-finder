@@ -14,14 +14,24 @@ export class Modal extends Component {
     };
 
     keyDownOperator = (event) => {
+        // console.log('ескейп');
         if (event.code === 'Escape') {
-            this.props.toggleModal(event);
+            this.props.toggleModal();
         };
     };
 
+    // додати функцію при кліку на оверлей
+    backdropClick = (event) => {
+        // console.log('оверлей');
+        if (event.currentTarget === event.target) {
+          this.props.toggleModal();
+        }
+      };
+    
+
     render() {
         return createPortal(
-            <div className={styles.overlay} onClick={this.props.toggleModal}>
+            <div className={styles.overlay} onClick={this.backdropClick} >
                 <div className={styles.modal}>
                     <img src={this.props.image} alt="choosed depiction" />
                 </div>

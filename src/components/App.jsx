@@ -4,8 +4,8 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
 import { Modal } from './Modal/Modal';
-import { requesterAPI } from './services/requesterAPI';
-import noFound from './images/no-found.png';
+import { requesterAPI } from '../services/requesterAPI';
+import noFound from '../images/no-found.png';
 import styles from './App.module.css';
 
 class App extends Component {
@@ -57,22 +57,19 @@ class App extends Component {
     };
   };
 
-  toggleModal = event => {
-    if (event.target === event.currentTarget || event.code ) {
-      const imgPath = event.target.id ? this.state.images[event.target.id].largeImageURL : '';
-      this.setState(prevValue => ({ isModalOpen: !prevValue.isModalOpen, largeImage: imgPath }));
-    };
+  toggleModal = largeImageURL => {
+      this.setState ( {largeImage: largeImageURL})
   };
 
   render() {
-    const { images, largeImage, isModalOpen, isLoading, isEndOfGallery } = this.state;
+    const { images, largeImage, isLoading, isEndOfGallery } = this.state;
     return (
       <div className={styles.app}>
         <Searchbar onSubmit={this.onSubmit} />
         {images.length > 0 && <ImageGallery images={images} toggleModal={this.toggleModal} />}
         {!images.length > 0 && <img src={noFound} alt="depiction no found" style={{margin: "auto", maxWidth: "600px"}} />}
         {images.length > 0 && !isEndOfGallery && <Button pageOperator={this.pageOperator} />}
-        {isModalOpen && <Modal image={largeImage} toggleModal={this.toggleModal} />}
+        {largeImage && <Modal image={largeImage} toggleModal={this.toggleModal} />}
         {isLoading && <Loader />}
       </div>
     );
